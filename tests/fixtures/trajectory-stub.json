@@ -1,0 +1,41 @@
+{
+  "session_id": "test_session_001",
+  "skill_name": "ce-plan",
+  "extracted_at": "2026-05-30T00:00:00+00:00",
+  "truncated": false,
+  "turns": [
+    {
+      "turn_id": "T1",
+      "role": "user",
+      "content_summary": "User requests to plan a new feature for their app.",
+      "tools_used": [],
+      "artifacts_created": [],
+      "decision_made": "",
+      "inferred_stage_id": null,
+      "confidence": 0.3,
+      "evidence_quote": "I want to plan a new feature for my app."
+    },
+    {
+      "turn_id": "T2",
+      "role": "agent",
+      "content_summary": "Agent asks clarifying question about the feature scope.",
+      "tools_used": [],
+      "artifacts_created": [],
+      "decision_made": "Asked user for feature description",
+      "inferred_stage_id": "S1",
+      "confidence": 0.8,
+      "evidence_quote": "What would you like to plan?"
+    },
+    {
+      "turn_id": "T3",
+      "role": "user",
+      "content_summary": "User specifies they want to build user authentication.",
+      "tools_used": [],
+      "artifacts_created": [],
+      "decision_made": "",
+      "inferred_stage_id": null,
+      "confidence": 0.3,
+      "evidence_quote": "A user authentication feature."
+    }
+  ]
+}
