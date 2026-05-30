@@ -18,7 +18,7 @@ except ImportError:
     console = None  # type: ignore[assignment]
 
 from swo.analyzer import analyse_and_save
-from swo.extractor import extract_and_save as extract_workflow
+from swo.extractor import _SUPPORTED_SKILLS, extract_and_save as extract_workflow
 from swo.exporter import export_by_id, export_by_title, list_recent_sessions, save_export
 from swo.renderer import build_report_model, render_and_save
 from swo.trajectory import extract_and_save as extract_trajectory
@@ -191,7 +191,10 @@ def run_pipeline(
         print(f"\nDone! {report_path.absolute()}")
 
     if open_browser:
-        subprocess.call(["open", str(report_path.absolute())])
+        try:
+            subprocess.call(["open", str(report_path.absolute())])
+        except FileNotFoundError:
+            print(f"Could not open browser automatically. Open manually: {report_path.absolute()}")
 
     return report_path
 
@@ -211,7 +214,7 @@ def main() -> None:
     )
     parser.add_argument(
         "--skill",
-        choices=["ce-brainstorm", "ce-plan"],
+        choices=list(_SUPPORTED_SKILLS),
         help="Skill to analyse",
     )
     id_group = parser.add_mutually_exclusive_group()

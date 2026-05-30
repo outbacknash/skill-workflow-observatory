@@ -95,6 +95,12 @@ def _load_rubric() -> str:
     rubric_path = _RUBRIC_PATH
     if rubric_path.exists():
         return rubric_path.read_text(encoding="utf-8")
+    import warnings
+    warnings.warn(
+        f"Deviation rubric not found at {rubric_path}. LLM will use general judgment. "
+        f"Set SWO_RUBRIC_PATH env var or ensure the project root is correct.",
+        stacklevel=2,
+    )
     return "(rubric not found — use general judgment)"
 
 
