@@ -7,6 +7,14 @@ import subprocess
 import sys
 from pathlib import Path
 
+# Load .env from project root before any Anthropic client is instantiated
+_PROJECT_ROOT = Path(__file__).parent.parent.parent
+try:
+    from dotenv import load_dotenv
+    load_dotenv(_PROJECT_ROOT / ".env")
+except ImportError:
+    pass
+
 try:
     from rich.console import Console
     from rich.progress import Progress, SpinnerColumn, TextColumn, TimeElapsedColumn
@@ -27,9 +35,6 @@ from swo.trajectory import extract_and_save as extract_trajectory
 # ---------------------------------------------------------------------------
 # Paths
 # ---------------------------------------------------------------------------
-
-_PROJECT_ROOT = Path(__file__).parent.parent.parent  # /Users/hermes/skill-workflow-observatory
-
 
 def _data_dir(subdir: str) -> Path:
     return _PROJECT_ROOT / "data" / subdir
