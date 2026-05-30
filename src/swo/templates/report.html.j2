@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SWO Report — {{ model.skill_name }} / {{ model.session_title or model.session_id }}</title>
+<style>
+  :root {
+    --bg: #f8f9fa;
+    --surface: #ffffff;
+    --border: #dee2e6;
+    --text: #212529;
+    --muted: #6c757d;
+    --helpful: #198754;
+    --harmful: #dc3545;
+    --neutral: #6c757d;
+    --unclear: #ffc107;
+    --followed: #0d6efd;
+    --skipped: #adb5bd;
+    --compressed: #fd7e14;
+    --reordered: #6610f2;
+    --over-applied: #0dcaf0;
+    --under-applied: #ffc107;
+    --invented: #20c997;
+    --misclassified: #dc3545;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1a1a2e;
+      --surface: #16213e;
+      --border: #344466;
+      --text: #e0e0e0;
+      --muted: #9ba3af;
+    }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+    background: var(--bg);
+    color: var(--text);
+    padding: 1rem;
+  }
+  .container { max-width: 900px; margin: 0 auto; }
+  h1 { font-size: 1.5rem; margin-bottom: 0.25rem; }
+  h2 { font-size: 1.2rem; margin: 1.5rem 0 0.75rem; border-bottom: 2px solid var(--border); padding-bottom: 0.3rem; }
+  h3 { font-size: 1rem; margin-bottom: 0.4rem; }
+  .meta { color: var(--muted); font-size: 0.85rem; margin-bottom: 1.5rem; }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1rem;
+  }
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+  .badge-helpful { background: #d1e7dd; color: var(--helpful); }
+  .badge-harmful { background: #f8d7da; color: var(--harmful); }
+  .badge-neutral { background: #e9ecef; color: var(--neutral); }
+  .badge-unclear { background: #fff3cd; color: #856404; }
+  .badge-followed { background: #cfe2ff; color: var(--followed); }
+  .badge-skipped { background: #e9ecef; color: #495057; }
+  .badge-compressed { background: #ffe5d0; color: #7d3a0a; }
+  .badge-reordered { background: #e2d9f3; color: var(--reordered); }
+  .badge-over-applied { background: #d6f5f5; color: #0a6066; }
+  .badge-under-applied { background: #fff3cd; color: #856404; }
+  .badge-invented { background: #d4edda; color: #0a5b3e; }
+  .badge-misclassified { background: #f8d7da; color: var(--harmful); }
+  /* Verdict card */
+  .verdict-card {
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+  .verdict-stats {
+    display: flex;
+    gap: 1.5rem;
+    margin-top: 1rem;
+    flex-wrap: wrap;
+  }
+  .stat { text-align: center; }
+  .stat-number { font-size: 1.8rem; font-weight: 700; line-height: 1; }
+  .stat-label { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; }
+  /* Workflow map */
+  .workflow-map table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+  }
+  .workflow-map th, .workflow-map td {
+    border: 1px solid var(--border);
+    padding: 0.4rem 0.6rem;
+    vertical-align: top;
+  }
+  .workflow-map th { background: var(--bg); font-weight: 600; }
+  /* Deviations table */
+  .deviations-table table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+  }
+  .deviations-table th, .deviations-table td {
+    border: 1px solid var(--border);
+    padding: 0.4rem 0.6rem;
+    vertical-align: top;
+  }
+  .deviations-table th { background: var(--bg); font-weight: 600; }
+  .confidence-bar {
+    display: inline-block;
+    height: 8px;
+    border-radius: 4px;
+    background: var(--followed);
+    vertical-align: middle;
+  }
+  /* Fit analysis */
+  .fit-group { margin-bottom: 0.75rem; }
+  .fit-group h3 { display: flex; align-items: center; gap: 0.4rem; }
+  .fit-items { list-style: none; padding-left: 0.5rem; }
+  .fit-items li { padding: 0.2rem 0; border-bottom: 1px solid var(--border); font-size: 0.875rem; }
+  /* Evidence drawer */
+  details {
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    margin-bottom: 0.4rem;
+    background: var(--surface);
+  }
+  summary {
+    padding: 0.5rem 0.75rem;
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 0.875rem;
+    list-style: none;
+  }
+  summary::-webkit-details-marker { display: none; }
+  summary::before { content: "▶ "; font-size: 0.7rem; }
+  details[open] summary::before { content: "▼ "; }
+  .evidence-body {
+    padding: 0.5rem 0.75rem 0.75rem;
+    font-size: 0.875rem;
+    border-top: 1px solid var(--border);
+  }
+  .evidence-body .quote {
+    font-style: italic;
+    color: var(--muted);
+    border-left: 3px solid var(--border);
+    padding-left: 0.5rem;
+    margin: 0.4rem 0;
+  }
+  /* Adaptation recs */
+  .rec-card {
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.5rem;
+    background: var(--surface);
+    font-size: 0.875rem;
+  }
+  .rec-card .rec-type { font-weight: 600; margin-bottom: 0.2rem; }
+  footer { margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--border); color: var(--muted); font-size: 0.8rem; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Skill Workflow Observatory</h1>
+  <div class="meta">
+    Skill: <strong>{{ model.skill_name }}</strong> &nbsp;·&nbsp;
+    Session: <strong>{{ model.session_title or model.session_id }}</strong> &nbsp;·&nbsp;
+    Generated: {{ generated_at[:19].replace('T', ' ') }} UTC
+  </div>
+
+  <!-- ================================================================
+       Section 1: Verdict card
+       ================================================================ -->
+  <h2>1. Executive Verdict</h2>
+  <div class="verdict-card">
+    <p>{{ model.deviations.executive_verdict }}</p>
+    <div class="verdict-stats">
+      <div class="stat">
+        <div class="stat-number">{{ followed_pct }}%</div>
+        <div class="stat-label">Stages followed</div>
+      </div>
+      <div class="stat">
+        <div class="stat-number" style="color: var(--helpful)">{{ fit_counts.helpful }}</div>
+        <div class="stat-label">Helpful deviations</div>
+      </div>
+      <div class="stat">
+        <div class="stat-number" style="color: var(--harmful)">{{ fit_counts.harmful }}</div>
+        <div class="stat-label">Harmful deviations</div>
+      </div>
+      <div class="stat">
+        <div class="stat-number">{{ model.trajectory.turns | length }}</div>
+        <div class="stat-label">Total turns</div>
+      </div>
+      {% if model.trajectory.truncated %}
+      <div class="stat">
+        <div class="stat-number" style="color: var(--unclear)">⚠</div>
+        <div class="stat-label">Session truncated</div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- ================================================================
+       Section 2: Workflow map
+       ================================================================ -->
+  <h2>2. Workflow Map</h2>
+  <div class="workflow-map card">
+    <table>
+      <thead>
+        <tr>
+          <th>Expected Stage</th>
+          <th>Turns</th>
+          <th>Deviation</th>
+          <th>Fit</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for a in assessments %}
+        <tr>
+          <td>
+            {% if a.expected_stage_id and a.expected_stage_id in stage_map %}
+              <strong>{{ a.expected_stage_id }}</strong>: {{ stage_map[a.expected_stage_id].stage_name }}
+            {% elif a.expected_stage_id %}
+              <strong>{{ a.expected_stage_id }}</strong>
+            {% else %}
+              <em style="color: var(--muted)">(invented)</em>
+            {% endif %}
+          </td>
+          <td>{{ a.actual_turn_range or "—" }}</td>
+          <td><span class="badge badge-{{ a.deviation_type }}">{{ a.deviation_type }}</span></td>
+          <td><span class="badge badge-{{ a.fit_for_knowledge_work }}">{{ a.fit_for_knowledge_work }}</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ================================================================
+       Section 3: Deviations table
+       ================================================================ -->
+  <h2>3. Deviations Table</h2>
+  <div class="deviations-table card">
+    <table>
+      <thead>
+        <tr>
+          <th>Stage</th>
+          <th>Type</th>
+          <th>Fit</th>
+          <th>Rationale</th>
+          <th>Confidence</th>
+          <th>Recommendation</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for a in assessments %}
+        <tr>
+          <td>{{ a.expected_stage_id or "(invented)" }}</td>
+          <td><span class="badge badge-{{ a.deviation_type }}">{{ a.deviation_type }}</span></td>
+          <td><span class="badge badge-{{ a.fit_for_knowledge_work }}">{{ a.fit_for_knowledge_work }}</span></td>
+          <td>{{ a.rationale }}</td>
+          <td>
+            <span class="confidence-bar" style="width: {{ (a.confidence * 60) | int }}px"></span>
+            {{ "%.0f" | format(a.confidence * 100) }}%
+          </td>
+          <td>{{ a.possible_skill_change or "—" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ================================================================
+       Section 4: Knowledge-work fit analysis
+       ================================================================ -->
+  <h2>4. Knowledge-Work Fit Analysis</h2>
+  <div class="card">
+    {% set fit_groups = [('helpful', 'Helpful'), ('harmful', 'Harmful'), ('neutral', 'Neutral'), ('unclear', 'Unclear')] %}
+    {% for fit_key, fit_label in fit_groups %}
+      {% set items = assessments | selectattr('fit_for_knowledge_work', 'equalto', fit_key) | list %}
+      {% if items %}
+      <div class="fit-group">
+        <h3><span class="badge badge-{{ fit_key }}">{{ fit_label }}</span> ({{ items | length }})</h3>
+        <ul class="fit-items">
+          {% for a in items %}
+          <li>
+            <strong>{{ a.expected_stage_id or "(invented)" }}</strong>
+            <span class="badge badge-{{ a.deviation_type }}">{{ a.deviation_type }}</span>
+            — {{ a.rationale | truncate(120) }}
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+    {% endfor %}
+    {% if not assessments %}
+    <p style="color: var(--muted)">No deviation assessments to display.</p>
+    {% endif %}
+  </div>
+
+  <!-- ================================================================
+       Section 5: Evidence drawer
+       ================================================================ -->
+  <h2>5. Evidence Drawer</h2>
+  <div class="card">
+    {% for turn in model.trajectory.turns %}
+    <details>
+      <summary>
+        {{ turn.turn_id }} &nbsp;·&nbsp; {{ turn.role | upper }}
+        {% if turn.inferred_stage_id %}&nbsp;·&nbsp; Stage {{ turn.inferred_stage_id }}{% endif %}
+        &nbsp;·&nbsp; {{ "%.0f" | format(turn.confidence * 100) }}% confidence
+        {% if turn.tools_used %}&nbsp;·&nbsp; 🔧 {{ turn.tools_used | join(', ') }}{% endif %}
+      </summary>
+      <div class="evidence-body">
+        <p><strong>Summary:</strong> {{ turn.content_summary }}</p>
+        {% if turn.decision_made %}
+        <p><strong>Decision:</strong> {{ turn.decision_made }}</p>
+        {% endif %}
+        {% if turn.artifacts_created %}
+        <p><strong>Artifacts:</strong> {{ turn.artifacts_created | join(', ') }}</p>
+        {% endif %}
+        {% if turn.evidence_quote %}
+        <div class="quote">{{ turn.evidence_quote }}</div>
+        {% endif %}
+      </div>
+    </details>
+    {% endfor %}
+    {% if not model.trajectory.turns %}
+    <p style="color: var(--muted)">No turns to display.</p>
+    {% endif %}
+  </div>
+
+  <!-- ================================================================
+       Section 6: Adaptation recommendations
+       ================================================================ -->
+  <h2>6. Adaptation Recommendations</h2>
+  <div class="card">
+    {% set recs = assessments | rejectattr('possible_skill_change', 'in', ['none', '']) | list %}
+    {% if recs %}
+      {% for a in recs %}
+      <div class="rec-card">
+        <div class="rec-type">
+          {{ a.possible_skill_change | upper }}
+          <span class="badge badge-{{ a.fit_for_knowledge_work }}" style="margin-left: 0.4rem">{{ a.fit_for_knowledge_work }}</span>
+          — Stage {{ a.expected_stage_id or "(invented)" }}
+          <span class="badge badge-{{ a.deviation_type }}">{{ a.deviation_type }}</span>
+        </div>
+        <p>{{ a.rationale }}</p>
+      </div>
+      {% endfor %}
+    {% else %}
+      <p style="color: var(--muted)">No adaptation recommendations — the skill served this session well without changes needed.</p>
+    {% endif %}
+  </div>
+
+  <footer>
+    Generated by Skill Workflow Observatory &nbsp;·&nbsp;
+    Plugin {{ model.expected_workflow.plugin_version }} ({{ model.expected_workflow.plugin_git_sha[:8] }})
+    &nbsp;·&nbsp; {{ generated_at[:10] }}
+  </footer>
+
+</div>
+</body>
+</html>
