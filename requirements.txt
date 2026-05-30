@@ -1,0 +1,5 @@
+# Use the hermes venv: source ~/.hermes/hermes-agent/venv/bin/activate
+# These versions match what is pinned in the hermes venv
+jinja2==3.1.6
+anthropic>=0.40.0
+rich==14.3.3

@@ -1,0 +1,28 @@
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+*.egg-info/
+dist/
+build/
+.DS_Store
+
+# Pipeline outputs (gitignored — regeneratable from state.db)
+data/sessions/
+data/trajectories/
+data/analyses/
+data/expected_workflows/
+reports/
+
+# Keep these dirs tracked
+!data/expected_workflows/.gitkeep
+!data/sessions/.gitkeep
+!data/trajectories/.gitkeep
+!data/analyses/.gitkeep
+!reports/.gitkeep
+
+# Rubric is intentionally committed
+!data/analyses/deviation_rubric.md
+
+# API keys
+.env
