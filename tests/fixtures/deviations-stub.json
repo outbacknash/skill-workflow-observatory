@@ -1,0 +1,26 @@
+{
+  "session_id": "test_session_001",
+  "skill_name": "ce-plan",
+  "analyzed_at": "2026-05-30T00:00:00+00:00",
+  "executive_verdict": "The agent followed the ce-plan workflow reasonably well for a short test session. The main deviation was a compressed Phase 0 and Phase 1, which was appropriate given the simple scope. No harmful deviations detected.",
+  "assessments": [
+    {
+      "expected_stage_id": "S1",
+      "actual_turn_range": "T1-T2",
+      "deviation_type": "compressed",
+      "fit_for_knowledge_work": "helpful",
+      "rationale": "Phase 0 and the opening of Phase 1 were handled in two turns. Given the simple request, this compression was appropriate and saved time.",
+      "confidence": 0.75,
+      "possible_skill_change": "none"
+    },
+    {
+      "expected_stage_id": "S2",
+      "actual_turn_range": "",
+      "deviation_type": "skipped",
+      "fit_for_knowledge_work": "neutral",
+      "rationale": "The Gather Context phase was skipped. For a simple test session with only 3 messages, this was appropriate — no complex research was warranted.",
+      "confidence": 0.8,
+      "possible_skill_change": "none"
+    }
+  ]
+}
