@@ -1,0 +1,36 @@
+{
+  "session_id": "test_session_001",
+  "source": "cli",
+  "model": "anthropic/claude-sonnet-4-6",
+  "title": "Test Session",
+  "started_at": 1748563200.0,
+  "ended_at": 1748566800.0,
+  "message_count": 3,
+  "exported_at": "2026-05-30T00:00:00+00:00",
+  "messages": [
+    {
+      "id": 1,
+      "role": "user",
+      "content": "I want to plan a new feature for my app.",
+      "tool_calls": null,
+      "tool_name": null,
+      "timestamp": 1748563200.0
+    },
+    {
+      "id": 2,
+      "role": "assistant",
+      "content": "What would you like to plan?",
+      "tool_calls": null,
+      "tool_name": null,
+      "timestamp": 1748563210.0
+    },
+    {
+      "id": 3,
+      "role": "user",
+      "content": "A user authentication feature.",
+      "tool_calls": null,
+      "tool_name": null,
+      "timestamp": 1748563220.0
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 [build-system]
-requires = ["setuptools>=68"]
-build-backend = "setuptools.backends.legacy:build"
+requires = ["setuptools>=42"]
+build-backend = "setuptools.build_meta"
 
 [project]
 name = "skill-workflow-observatory"
@@ -10,7 +10,8 @@ requires-python = ">=3.11"
 dependencies = [
     "jinja2==3.1.6",
     "anthropic>=0.40.0",
-    "rich>=14.0.0",
+    "rich==14.3.3",
+    "python-dotenv>=1.0.0",
 ]
 
 [project.scripts]
@@ -18,3 +19,6 @@ swo = "swo.main:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
